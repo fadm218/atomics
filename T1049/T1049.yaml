@@ -1,0 +1,103 @@
+attack_technique: T1049
+display_name: System Network Connections Discovery
+atomic_tests:
+    - name: System Network Connections Discovery
+      item_id: T1049-1
+      auto_generated_guid: 0940a971-809a-48f1-9c4d-b1d785e96ee5
+      description: |
+        Get a listing of network connections.
+
+        Upon successful execution, cmd.exe will execute `netstat`, `net use` and `net sessions`. Results will output via stdout.
+      supported_platforms:
+        - windows
+      input_arguments: {}
+      dependency_executor_name: ""
+      dependencies: []
+      executor:
+        command: |
+            netstat
+            net use
+            net sessions
+        cleanup_command: ""
+        name: command_prompt
+        elevation_required: false
+    - name: System Network Connections Discovery with PowerShell
+      item_id: T1049-2
+      auto_generated_guid: f069f0f1-baad-4831-aa2b-eddac4baac4a
+      description: |
+        Get a listing of network connections.
+
+        Upon successful execution, powershell.exe will execute `get-NetTCPConnection`. Results will output via stdout.
+      supported_platforms:
+        - windows
+      input_arguments: {}
+      dependency_executor_name: ""
+      dependencies: []
+      executor:
+        command: |
+            Get-NetTCPConnection
+        cleanup_command: ""
+        name: powershell
+        elevation_required: false
+    - name: System Network Connections Discovery Linux & MacOS
+      item_id: T1049-3
+      auto_generated_guid: 9ae28d3f-190f-4fa0-b023-c7bd3e0eabf2
+      description: |
+        Get a listing of network connections.
+
+        Upon successful execution, sh will execute `netstat` and `who -a`. Results will output via stdout.
+      supported_platforms:
+        - linux
+        - macos
+      input_arguments: {}
+      dependency_executor_name: sh
+      dependencies:
+        - description: |
+            Check if netstat command exists on the machine
+          prereq_command: |
+            if [ -x "$(command -v netstat)" ]; then exit 0; else exit 1; fi;
+          get_prereq_command: |
+            echo "Install netstat on the machine."; exit 1;
+      executor:
+        command: |
+            netstat
+            who -a
+        cleanup_command: ""
+        name: sh
+        elevation_required: false
+    - name: System Discovery using SharpView
+      item_id: T1049-4
+      auto_generated_guid: 96f974bb-a0da-4d87-a744-ff33e73367e9
+      description: "Get a listing of network connections, domains, domain users, and etc.  \nsharpview.exe located in the bin folder, an opensource red-team tool.\nUpon successful execution, cmd.exe will execute sharpview.exe <method>. Results will output via stdout.\n"
+      supported_platforms:
+        - windows
+      input_arguments:
+        SharpView:
+            description: Path of the executable opensource redteam tool used for the performing this atomic.
+            type: path
+            default: PathToAtomicsFolder\T1049\bin\SharpView.exe
+        SharpView_url:
+            description: sharpview download URL
+            type: url
+            default: https://github.com/tevora-threat/SharpView/blob/b60456286b41bb055ee7bc2a14d645410cca9b74/Compiled/SharpView.exe?raw=true
+        syntax:
+            description: Arguements method used along with SharpView to get listing of network connections, domains, domain users, and etc.
+            type: string
+            default: "\"Invoke-ACLScanner\", \"Invoke-Kerberoast\", \"Find-DomainShare\" \n"
+      dependency_executor_name: powershell
+      dependencies:
+        - description: |
+            Sharpview.exe must exist on disk at specified location (#{SharpView})
+          prereq_command: |
+            if (Test-Path #{SharpView}) {exit 0} else {exit 1}
+          get_prereq_command: |
+            New-Item -Type Directory (split-path #{SharpView}) -ErrorAction ignore | Out-Null
+            Invoke-WebRequest #{SharpView_url} -OutFile "#{SharpView}"
+      executor:
+        command: |
+            $syntaxList = #{syntax}
+            foreach ($syntax in $syntaxList) {
+            #{SharpView} $syntax -}
+        cleanup_command: ""
+        name: powershell
+        elevation_required: true

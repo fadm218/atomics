@@ -1,0 +1,31 @@
+attack_technique: T1546.001
+display_name: 'Event Triggered Execution: Change Default File Association'
+atomic_tests:
+    - name: Change Default File Association
+      item_id: T1546.001-1
+      auto_generated_guid: 10a08978-2045-4d62-8c42-1957bbbea102
+      description: "Change Default File Association From cmd.exe of hta to notepad.\n\nUpon successful execution, cmd.exe will change the file association of .hta to notepad.exe. \n"
+      supported_platforms:
+        - windows
+      input_arguments:
+        extension_to_change:
+            description: File Extension To Hijack
+            type: string
+            default: .hta
+        original_extension_handler:
+            description: File Extension To Revert
+            type: string
+            default: htafile
+        target_extension_handler:
+            description: txtfile maps to notepad.exe
+            type: path
+            default: txtfile
+      dependency_executor_name: ""
+      dependencies: []
+      executor:
+        command: |
+            assoc #{extension_to_change}=#{target_extension_handler}
+        cleanup_command: |
+            assoc  #{extension_to_change}=#{original_extension_handler}
+        name: command_prompt
+        elevation_required: true

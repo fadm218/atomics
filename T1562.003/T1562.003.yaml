@@ -1,0 +1,40 @@
+attack_technique: T1562.003
+display_name: 'Impair Defenses: HISTCONTROL'
+atomic_tests:
+    - name: Disable history collection
+      item_id: T1562.003-1
+      auto_generated_guid: 4eafdb45-0f79-4d66-aa86-a3e2c08791f5
+      description: |
+        Disables history collection in shells
+      supported_platforms:
+        - linux
+        - macos
+      input_arguments:
+        evil_command:
+            description: Command to run after shell history collection is disabled
+            type: string
+            default: whoami
+      dependency_executor_name: ""
+      dependencies: []
+      executor:
+        command: |
+            export HISTCONTROL=ignoreboth
+            #{evil_command}
+        cleanup_command: ""
+        name: sh
+        elevation_required: false
+    - name: Mac HISTCONTROL
+      item_id: T1562.003-2
+      auto_generated_guid: 468566d5-83e5-40c1-b338-511e1659628d
+      description: "The HISTCONTROL variable is set to ignore (not write to the history file) command that are a duplicate of something already in the history \nand commands that start with a space. This atomic sets this variable in the current session and also writes it to the current user's ~/.bash_profile \nso that it will apply to all future settings as well.\nhttps://www.linuxjournal.com/content/using-bash-history-more-efficiently-histcontrol\n"
+      supported_platforms:
+        - macos
+        - linux
+      input_arguments: {}
+      dependency_executor_name: ""
+      dependencies: []
+      executor:
+        command: ""
+        cleanup_command: ""
+        name: manual
+        elevation_required: false

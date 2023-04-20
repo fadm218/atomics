@@ -1,0 +1,87 @@
+attack_technique: T1012
+display_name: Query Registry
+atomic_tests:
+    - name: Query Registry
+      item_id: T1012-1
+      auto_generated_guid: 8f7578c4-9863-4d83-875c-a565573bbdf0
+      description: |
+        Query Windows Registry.
+        Upon successful execution, cmd.exe will perform multiple reg queries. Some will succeed and others will fail (dependent upon OS).
+        References:
+        https://blog.cylance.com/windows-registry-persistence-part-2-the-run-keys-and-search-order
+        https://blog.cylance.com/windows-registry-persistence-part-1-introduction-attack-phases-and-windows-services
+        http://www.handgrep.se/repository/cheatsheets/postexploitation/WindowsPost-Exploitation.pdf
+        https://www.offensive-security.com/wp-content/uploads/2015/04/wp.Registry_Quick_Find_Chart.en_us.pdf
+      supported_platforms:
+        - windows
+      input_arguments: {}
+      dependency_executor_name: ""
+      dependencies: []
+      executor:
+        command: |
+            reg query "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows"
+            reg query HKLM\Software\Microsoft\Windows\CurrentVersion\RunServicesOnce
+            reg query HKCU\Software\Microsoft\Windows\CurrentVersion\RunServicesOnce
+            reg query HKLM\Software\Microsoft\Windows\CurrentVersion\RunServices
+            reg query HKCU\Software\Microsoft\Windows\CurrentVersion\RunServices
+            reg query "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify"
+            reg query "HKLM\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\Userinit"
+            reg query "HKCU\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\\Shell"
+            reg query "HKLM\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\\Shell"
+            reg query HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\ShellServiceObjectDelayLoad
+            reg query HKLM\Software\Microsoft\Windows\CurrentVersion\RunOnce
+            reg query HKLM\Software\Microsoft\Windows\CurrentVersion\RunOnceEx
+            reg query HKLM\Software\Microsoft\Windows\CurrentVersion\Run
+            reg query HKCU\Software\Microsoft\Windows\CurrentVersion\Run
+            reg query HKCU\Software\Microsoft\Windows\CurrentVersion\RunOnce
+            reg query HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run
+            reg query HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run
+            reg query HKLM\system\currentcontrolset\services /s | findstr ImagePath 2>nul | findstr /Ri ".*\.sys$"
+            reg query HKLM\Software\Microsoft\Windows\CurrentVersion\Run
+            reg query HKLM\SYSTEM\CurrentControlSet\Control\SafeBoot
+            reg query "HKLM\SOFTWARE\Microsoft\Active Setup\Installed Components"
+            reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\Startup"
+        cleanup_command: ""
+        name: command_prompt
+        elevation_required: true
+    - name: Query Registry with Powershell cmdlets
+      item_id: T1012-2
+      auto_generated_guid: 0434d081-bb32-42ce-bcbb-3548e4f2628f
+      description: "Query Windows Registry with Powershell cmdlets, i.e., Get-Item and Get-ChildItem. The results from above can also be achieved with Get-Item and Get-ChildItem.\nUnlike using \"reg query\" which then executes reg.exe, using cmdlets won't generate new processes, which may evade detection systems monitoring process generation. \n"
+      supported_platforms:
+        - windows
+      input_arguments: {}
+      dependency_executor_name: ""
+      dependencies: []
+      executor:
+        command: "Get-Item -Path \"HKLM:SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Windows\"\nGet-ChildItem -Path \"HKLM:SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\\" | findstr Windows\nGet-Item -Path \"HKLM:Software\\Microsoft\\Windows\\CurrentVersion\\RunServicesOnce\"\nGet-Item -Path \"HKCU:Software\\Microsoft\\Windows\\CurrentVersion\\RunServicesOnce\"\nGet-Item -Path \"HKLM:Software\\Microsoft\\Windows\\CurrentVersion\\RunServices\"\nGet-Item -Path \"HKCU:Software\\Microsoft\\Windows\\CurrentVersion\\RunServices\"\nGet-Item -Path \"HKLM:SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\\Notify\"\nGet-Item -Path \"HKLM:Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\\Userinit\"\nGet-Item -Path \"HKCU:Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\\\\Shell\"\nGet-Item -Path \"HKLM:Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\\\\Shell\"\nGet-Item -Path \"HKLM:SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\ShellServiceObjectDelayLoad\"\nGet-Item -Path \"HKLM:Software\\Microsoft\\Windows\\CurrentVersion\\RunOnce\"\nGet-Item -Path \"HKLM:Software\\Microsoft\\Windows\\CurrentVersion\\RunOnceEx\"\nGet-Item -Path \"HKLM:Software\\Microsoft\\Windows\\CurrentVersion\\Run\"\nGet-Item -Path \"HKCU:Software\\Microsoft\\Windows\\CurrentVersion\\Run\"\nGet-Item -Path \"HKCU:Software\\Microsoft\\Windows\\CurrentVersion\\RunOnce\"\nGet-Item -Path \"HKLM:Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\Run\"\nGet-Item -Path \"HKCU:Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\Run\"\nGet-ChildItem -Path \"HKLM:system\\currentcontrolset\\services\" \nGet-Item -Path \"HKLM:Software\\Microsoft\\Windows\\CurrentVersion\\Run\"\nGet-Item -Path \"HKLM:SYSTEM\\CurrentControlSet\\Control\\SafeBoot\"\nGet-ChildItem -Path \"HKLM:SOFTWARE\\Microsoft\\Active Setup\\Installed Components\"\nGet-ChildItem -Path \"HKLM:SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Group Policy\\Scripts\\Startup\"\n"
+        cleanup_command: ""
+        name: powershell
+        elevation_required: true
+    - name: Enumerate COM Objects in Registry with Powershell
+      item_id: T1012-3
+      auto_generated_guid: 0d80d088-a84c-4353-af1a-fc8b439f1564
+      description: "This test is designed to enumerate the COM objects listed in HKCR, then output their methods and CLSIDs to a text file.\nAn adversary could then use this information to identify COM objects that might be vulnerable to abuse, such as using them to spawn arbitrary processes. \nSee: https://www.mandiant.com/resources/hunting-com-objects"
+      supported_platforms:
+        - windows
+      input_arguments:
+        output_file:
+            description: File to output list of COM objects to
+            type: string
+            default: $env:temp\T1592.002Test1.txt
+      dependency_executor_name: ""
+      dependencies: []
+      executor:
+        command: |
+            New-PSDrive -PSProvider registry -Root HKEY_CLASSES_ROOT -Name HKCR
+            Get-ChildItem -Path HKCR:\CLSID -Name | Select -Skip 1 > $env:temp\clsids.txt
+            ForEach($CLSID in Get-Content "$env:temp\clsids.txt")
+            {try{write-output "$($Position)-$($CLSID)"
+            write-output "------------"| out-file #{output_file} -append
+            write-output $($CLSID)| out-file #{output_file} -append
+            $handle=[activator]::CreateInstance([type]::GetTypeFromCLSID($CLSID))
+            $handle | get-member -erroraction silentlycontinue | out-file #{output_file} -append
+            $position += 1} catch{}}
+        cleanup_command: "remove-item #{output_file} -force -erroraction silentlycontinue\nremove-item $env:temp\\clsids.txt -force -erroraction silentlycontinue      \n"
+        name: powershell
+        elevation_required: false

@@ -1,0 +1,53 @@
+attack_technique: T1571
+display_name: Non-Standard Port
+atomic_tests:
+    - name: Testing usage of uncommonly used port with PowerShell
+      item_id: T1571-1
+      auto_generated_guid: 21fe622f-8e53-4b31-ba83-6d333c2583f4
+      description: |
+        Testing uncommonly used port utilizing PowerShell. APT33 has been known to attempt telnet over port 8081. Upon execution, details about the successful
+        port check will be displayed.
+      supported_platforms:
+        - windows
+      input_arguments:
+        domain:
+            description: Specify target hostname
+            type: string
+            default: google.com
+        port:
+            description: Specify uncommon port number
+            type: string
+            default: "8081"
+      dependency_executor_name: ""
+      dependencies: []
+      executor:
+        command: |
+            Test-NetConnection -ComputerName #{domain} -port #{port}
+        cleanup_command: ""
+        name: powershell
+        elevation_required: false
+    - name: Testing usage of uncommonly used port
+      item_id: T1571-2
+      auto_generated_guid: 5db21e1d-dd9c-4a50-b885-b1e748912767
+      description: |
+        Testing uncommonly used port utilizing telnet.
+      supported_platforms:
+        - linux
+        - macos
+      input_arguments:
+        domain:
+            description: Specify target hostname
+            type: string
+            default: google.com
+        port:
+            description: Specify uncommon port number
+            type: string
+            default: "8081"
+      dependency_executor_name: ""
+      dependencies: []
+      executor:
+        command: |
+            telnet #{domain} #{port}
+        cleanup_command: ""
+        name: sh
+        elevation_required: false

